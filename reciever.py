@@ -13,32 +13,37 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.bind(('', 9091))
 sock.listen(1)
 
-print time.time()-start
 reciever, addr = sock.accept()
 
-shape = reciever.recv(13)
-count = reciever.recv(2)
 
+while True:
+  shape = reciever.recv(13)
+  count = int(reciever.recv(2))
+  print shape, count
+  splitted = shape.split(',')
+  x1 = int(splitted[0][1:])
+  x2 = int(splitted[1][1:])
+  x3 = int(splitted[2][:len(splitted[2])-1])
+  
+  
+  buf = ''
+  for i in range(count):
+    buf = buf + reciever.recv(20480)
+  buf = buf + reciever.recv(x1*x2*x3 - 20480*count)
+  #buf = buf[:x1*x2*x3]
+  print len(buf)
+  aar = []
+  for ch in buf:
+    aar.append(ord(ch))
 
-splitted = shape.split(',')
-x1, x2, x3 = int(splitted[0][1:]) , int(splitted[1][1:]) , int(splitted[2][:len(splitted[2])-1])
+  arr = np.array(aar)
+  print arr.size
+  ppp = arr.reshape((x1, x2, x3))
 
-print time.time()-start
-
-buf = ''
-for i in range(int(count)+1):
-  buf = buf + reciever.recv(20480)
-
-aar = []
-for ch in buf:
-  aar.append(ord(ch))
-
-arr = np.array(aar)
-ppp = arr.reshape((x1, x2, x3))
-
-cv.imwrite('recieved_image.jpg', ppp)
-
-print ppp.shape
+  cv.imshow('recieved_image', ppp)
+  if cv.waitKey(1) & 0xFF == ord('q'):
+    break
+  print 'accepted'
 
 reciever.close()
 
