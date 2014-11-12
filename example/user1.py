@@ -1,3 +1,4 @@
+import sys
 import errno
 import threading
 import cv
@@ -8,7 +9,9 @@ import numpy as np
 block_size = 20480 #bytes
 
 def transmitter(capture, connect_to):
+  print threading.current_thread().name
   transmit_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+  
   try:
     transmit_socket.connect(connect_to)
   except socket.error, v:
@@ -16,10 +19,11 @@ def transmitter(capture, connect_to):
     if errorcode == errno.ECONNREFUSED:
       print "User you are trying to connect to is not online"
       exit()
-    print "Some error in socket"
+    print threading.current_thread().name, "some error in socket", errorcode
     exit()
   
   while True:
+    print 'Started transmitting video'
     image = cv.QueryFrame(capture)
     if image != None:
       image = np.asarray(image[:,:])
@@ -35,10 +39,12 @@ def transmitter(capture, connect_to):
   transmit_socket.close()
 
 def reciever():
+  print threading.current_thread().name
   sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
   sock.bind(('', 9090))
   sock.listen(1)
   
+  print 'listening'
   recieve_socket, addr = sock.accept()
   print addr
   
@@ -64,13 +70,17 @@ def reciever():
 
   recieve_socket.close()
 
+
+
 cap = cv.CaptureFromCAM(0)
 
-t1 = threading.Thread(target=transmitter, args=(cap, ('127.0.0.1', 9091)))
+t1 = threading.Timer(5.0, transmitter, args=[cap, ('127.0.0.1', 10091)])
 
+#t1 = threading.Thread(target=transmitter, args=(cap, ('127.0.0.1', 10091)))
+t2 = threading.Thread(target=reciever)
 
 t1.start()
+t2.start()
 
-
-t1.join()
-
+#t1.join()
+t2.join()
