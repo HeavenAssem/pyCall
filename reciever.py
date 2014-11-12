@@ -1,12 +1,8 @@
 import socket
 import numpy as np
-import binascii
 import time
-import sys
-import cv2 as cv
+import cv2
 
-
-start = time.time()
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -15,11 +11,12 @@ sock.listen(1)
 
 reciever, addr = sock.accept()
 
+#cv2.cv.NamedWindow("reciever", cv2.cv.CV_WINDOW_AUTOSIZE)
 
 while True:
+  start = time.time()
   shape = reciever.recv(13)
   count = int(reciever.recv(2))
-  print shape, count
   splitted = shape.split(',')
   x1 = int(splitted[0][1:])
   x2 = int(splitted[1][1:])
@@ -30,21 +27,14 @@ while True:
   for i in range(count):
     buf = buf + reciever.recv(20480)
   buf = buf + reciever.recv(x1*x2*x3 - 20480*count)
-  #buf = buf[:x1*x2*x3]
-  print len(buf)
-  aar = []
-  for ch in buf:
-    aar.append(ord(ch))
 
-  arr = np.array(aar)
-  print arr.size
-  ppp = arr.reshape((x1, x2, x3))
-
-  cv.imshow('recieved_image', ppp)
-  if cv.waitKey(1) & 0xFF == ord('q'):
+  arr = np.fromstring(buf, dtype=np.uint8).reshape((x1, x2, x3))
+  bitmap = cv2.cv.CreateImageHeader((x2, x1), cv2.cv.IPL_DEPTH_8U, 3)
+  cv2.cv.SetData(bitmap, arr.tostring(), arr.itemsize*x2*3)
+  cv2.cv.ShowImage('reciever', bitmap)
+ # cv2.imshow('recieved', ppp)
+  if cv2.cv.WaitKey(10) & 0xFF == ord('q'):
     break
-  print 'accepted'
 
 reciever.close()
 
-print time.time()-start

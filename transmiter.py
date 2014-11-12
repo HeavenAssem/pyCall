@@ -1,33 +1,29 @@
-import cv2 as cv
-import numpy
+import cv
+import numpy as np
 import socket
 import time
-import sys
 
-start = time.time()
-
-cap = cv.VideoCapture(0)
 
 transmitter = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 transmitter.connect(('127.0.0.1', 9091))
 
+cap = cv.CaptureFromCAM(0)
+
 while True:
-  ret, img = cap.read()
-  img_size = img.size
-  count = int(img_size/20480)
-  print str(img.shape), img.size
+  img = cv.QueryFrame(cap)
+  cv.ShowImage('transmit', img)
+  img = np.asarray(img[:,:])
+  count = int(img.size/20480)
+  start = time.time()
   transmitter.send(str(img.shape))
   transmitter.send(str(count))
   for i in range(count):
-    #print i
     transmitter.send(img.data[20480*i:(i+1)*20480])
-    print len(img.data[20480*(count):])
   transmitter.send(img.data[20480*(count):])
+  if cv.WaitKey(1) & 0xFF == ord('q'):
+  	  break
+
+transmitter.close()
 
 
-ransmitter.close()
-
-
-end = time.time()
-print end-start
