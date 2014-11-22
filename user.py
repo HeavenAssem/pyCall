@@ -1,23 +1,12 @@
-import cv
+import sockets
 import numpy as np
-import socket
-import time
-import errno
+import cv
+import threading
 
+def transmitting(cameraCapture):
+  transmit_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+  transmit_socket.connect(('127.0.0.1', 9091))
 
-transmitter = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-try:
-  transmitter.connect(('127.0.0.1', 9091))
-except socket.error, v:
-	errorcode = v[0]
-	if errorcode == errno.ECONNREFUSED:
-		print "User you trying to connect to is not online"
-		exit()
-	print errorcode
-	exit()
-
-cap = cv.CaptureFromCAM(0)
 
 while True:
   img = cv.QueryFrame(cap)
@@ -35,4 +24,6 @@ while True:
 
 transmitter.close()
 
+
+cap = cv.CaptureFromCAM(0)
 

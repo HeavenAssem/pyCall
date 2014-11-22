@@ -23,7 +23,6 @@ def transmitter(capture, connect_to):
     exit()
   
   while True:
-    print 'Started transmitting video'
     image = cv.QueryFrame(capture)
     if image != None:
       image = np.asarray(image[:,:])
@@ -58,23 +57,23 @@ def reciever():
     
     buf = ''
     for i in range(count):
-      buf = buf + reciever.recv(20480)
-    buf = buf + reciever.recv(x1*x2*x3 - 20480*count)
+      buf = buf + recieve_socket.recv(20480)
+    buf = buf + recieve_socket.recv(x1*x2*x3 - 20480*count)
 
     arr = np.fromstring(buf, dtype=np.uint8).reshape((x1, x2, x3))
-    bitmap = cv2.cv.CreateImageHeader((x2, x1), cv2.cv.IPL_DEPTH_8U, 3)
-    cv2.cv.SetData(bitmap, arr.tostring(), arr.itemsize*x2*3)
-    cv2.cv.ShowImage('recieved', bitmap)
-    if cv2.cv.WaitKey(10) & 0xFF == ord('q'):
+    bitmap = cv.CreateImageHeader((x2, x1), cv.IPL_DEPTH_8U, 3)
+    cv.SetData(bitmap, arr.tostring(), arr.itemsize*x2*3)
+    cv.ShowImage('recieved', bitmap)
+    if cv.WaitKey(1) & 0xFF == ord('q'):
       break
 
   recieve_socket.close()
 
 
 
-cap = cv.CaptureFromCAM(0)
+cap = cv.CaptureFromCAM(1)
 
-t1 = threading.Timer(5.0, transmitter, args=[cap, ('127.0.0.1', 10091)])
+t1 = threading.Timer(10.0, transmitter, args=[cap, ('127.0.0.1', 10091)])
 
 #t1 = threading.Thread(target=transmitter, args=(cap, ('127.0.0.1', 10091)))
 t2 = threading.Thread(target=reciever)
@@ -82,5 +81,5 @@ t2 = threading.Thread(target=reciever)
 t1.start()
 t2.start()
 
-#t1.join()
+t1.join()
 t2.join()
