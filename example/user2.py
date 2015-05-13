@@ -68,13 +68,9 @@ def reciever():
   recieve_socket.close()
 
 
-print len(sys.argv)
-print sys.argv
-
-
 cap = cv.CaptureFromCAM(0)
 
-t1 = threading.Thread(target=transmitter, args=(cap, ('127.0.0.1', 9090)))
+t1 = threading.Timer(10.0, transmitter, args=[cap, ('127.0.0.1', 9090)])
 t2 = threading.Thread(target=reciever)
 
 t1.start()

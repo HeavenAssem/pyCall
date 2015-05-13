@@ -74,13 +74,11 @@ def reciever():
 
 cap = cv.CaptureFromCAM(0)
 
-t1 = threading.Timer(5.0, transmitter, args=[cap, ('127.0.0.1', 10091)])
-
-#t1 = threading.Thread(target=transmitter, args=(cap, ('127.0.0.1', 10091)))
+t1 = threading.Timer(10.0, transmitter, args=[cap, ('127.0.0.1', 10091)])
 t2 = threading.Thread(target=reciever)
 
 t1.start()
 t2.start()
 
-#t1.join()
+t1.join()
 t2.join()
