@@ -5,8 +5,11 @@ import cv
 import time
 import socket
 import numpy as np
+import struct
 
-block_size = 20480 #bytes
+block_size = 20240 #bytes
+
+
 
 def transmitter(capture, connect_to):
   transmit_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -21,13 +24,12 @@ def transmitter(capture, connect_to):
     exit()
   
   while True:
-    print threading.current_thread().name, "started transmitting video"
     image = cv.QueryFrame(capture)
     if image != None:
       image = np.asarray(image[:,:])
       count = int(image.size/block_size)
-      transmit_socket.send(str(image.shape))
-      transmit_socket.send(str(count))
+      transmit_socket.send(struct.pack('iii', image.shape[0], image.shape[1], image.shape[2]))
+      transmit_socket.send(struct.pack('i', count))
       for i in range(count):
         transmit_socket.send(image.data[block_size*i:block_size*(i+1)])
       transmit_socket.send(image.data[block_size*count:])
@@ -36,9 +38,11 @@ def transmitter(capture, connect_to):
     
   transmit_socket.close()
 
+
+
 def reciever():
   sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-  sock.bind(('', 10091))
+  sock.bind(('', 30091))
   sock.listen(1)
   
   print 'listening'
@@ -46,31 +50,33 @@ def reciever():
   print addr
   
   while True:
-    shape = recieve_socket.recv(13)
-    count = int(recieve_socket.recv(2))
-    splitted = shape.split(',')
-    x1 = int(splitted[0][1:])
-    x2 = int(splitted[1][1:])
-    x3 = int(splitted[2][:len(splitted[2])-1])
+    shape = recieve_socket.recv(12)
+    count = struct.unpack('i', recieve_socket.recv(4))[0]
+    x1, x2, x3 = struct.unpack('iii', shape)
     
+#    print x1, x2, x3, count#, len(buf)
     buf = ''
     for i in range(count):
-      buf = buf + reciever.recv(20480)
-    buf = buf + reciever.recv(x1*x2*x3 - 20480*count)
+      buf = ''.join([buf, recieve_socket.recv(block_size)])
+    
+    buf = ''.join([buf, recieve_socket.recv(int(x1*x2*x3 - block_size*count))])
 
+#    print (len(buf), x1*x2*x3, count)
+    
     arr = np.fromstring(buf, dtype=np.uint8).reshape((x1, x2, x3))
-    bitmap = cv2.cv.CreateImageHeader((x2, x1), cv2.cv.IPL_DEPTH_8U, 3)
-    cv2.cv.SetData(bitmap, arr.tostring(), arr.itemsize*x2*3)
-    cv2.cv.ShowImage('recieved', bitmap)
-    if cv2.cv.WaitKey(10) & 0xFF == ord('q'):
+    bitmap = cv.CreateImageHeader((x2, x1), cv.IPL_DEPTH_8U, 3)
+    cv.SetData(bitmap, arr.tostring(), arr.itemsize*x2*3)
+    cv.ShowImage('recieved2', bitmap)
+    if cv.WaitKey(1) & 0xFF == ord('q'):
       break
 
   recieve_socket.close()
 
 
-cap = cv.CaptureFromCAM(0)
 
 t1 = threading.Timer(10.0, transmitter, args=[cap, ('127.0.0.1', 9090)])
+cap = cv.CaptureFromCAM(1)
+
 t2 = threading.Thread(target=reciever)
 
 t1.start()
